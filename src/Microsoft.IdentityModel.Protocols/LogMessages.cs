@@ -48,7 +48,7 @@ namespace Microsoft.IdentityModel.Protocols
         internal const string IDX20803 = "IDX20803: Unable to obtain configuration from: '{0}'.";
         internal const string IDX20804 = "IDX20804: Unable to retrieve document from: '{0}'.";
         internal const string IDX20805 = "IDX20805: Obtaining information from metadata endpoint: '{0}'.";
-        internal const string IDX20806 = "IDX20806: Unable to obtain an updated configuration from: '{0}'. Returning the current configuration. Exception thrown during configuration retrieval: '{1}'.";
+        internal const string IDX20806 = "IDX20806: Unable to obtain an updated configuration from: '{0}'. Returning the current configuration.";
 #pragma warning restore 1591
     }
 }

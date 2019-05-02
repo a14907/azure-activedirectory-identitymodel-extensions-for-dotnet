@@ -27,8 +27,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Threading;
+using Microsoft.IdentityModel.Protocols.Exceptions;
 using Microsoft.IdentityModel.TestUtils;
 using Xunit;
 
@@ -207,7 +209,27 @@ namespace Microsoft.IdentityModel.Protocols.OpenIdConnect.Tests
 
             // get configuration from http address, should throw
             configManager = new ConfigurationManager<OpenIdConnectConfiguration>("http://someaddress.com", new OpenIdConnectConfigurationRetriever());
-            var ee = new ExpectedException(typeof(InvalidOperationException), "IDX20803:", typeof(ArgumentException));
+            var ee = new ExpectedException(typeof(ConfigurationRetrievalException), "IDX20803:", typeof(ArgumentException));
+            try
+            {
+                configuration = configManager.GetConfigurationAsync().Result;
+                ee.ProcessNoException(context);
+            }
+            catch (AggregateException ex)
+            {
+                // this should throw, because last configuration retrived was null
+                Assert.Throws<AggregateException>(() => configuration = configManager.GetConfigurationAsync().Result);
+
+                ex.Handle((x) =>
+                {
+                    ee.ProcessException(x, context);
+                    return true;
+                });
+            }
+
+            // get configuration from https address, should throw
+            configManager = new ConfigurationManager<OpenIdConnectConfiguration>("https://someaddress.com", new OpenIdConnectConfigurationRetriever());
+            ee = new ExpectedException(typeof(ConfigurationRetrievalException), "IDX20803:", typeof(IOException));
             try
             {
                 configuration = configManager.GetConfigurationAsync().Result;

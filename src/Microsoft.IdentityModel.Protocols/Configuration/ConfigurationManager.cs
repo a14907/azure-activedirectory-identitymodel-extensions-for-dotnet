@@ -31,6 +31,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Logging;
+using Microsoft.IdentityModel.Protocols.Exceptions;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Microsoft.IdentityModel.Protocols
@@ -200,9 +201,9 @@ namespace Microsoft.IdentityModel.Protocols
                     {
                         _syncAfter = DateTimeUtil.Add(now.UtcDateTime, _automaticRefreshInterval < _refreshInterval ? _automaticRefreshInterval : _refreshInterval);
                         if (_currentConfiguration == null) // Throw an exception if there's no configuration to return.
-                            throw LogHelper.LogExceptionMessage(new InvalidOperationException(LogHelper.FormatInvariant(LogMessages.IDX20803, (_metadataAddress ?? "null")), ex));
+                            throw LogHelper.LogExceptionMessage(new ConfigurationRetrievalException(LogHelper.FormatInvariant(LogMessages.IDX20803, (_metadataAddress ?? "null")), ex));
                         else
-                            LogHelper.LogWarning(LogHelper.FormatInvariant(LogMessages.IDX20806, (_metadataAddress ?? "null"), ex));
+                            LogHelper.LogExceptionMessage(new ConfigurationRetrievalException(LogHelper.FormatInvariant(LogMessages.IDX20806, (_metadataAddress ?? "null")), ex));
                     }
                 }
 
