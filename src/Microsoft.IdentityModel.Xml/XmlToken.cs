@@ -29,7 +29,7 @@ using System.Xml;
 
 namespace Microsoft.IdentityModel.Xml
 {
-    internal class XmlTokenEntry
+    internal class XmlToken
     {
         internal XmlNodeType NodeType;
         internal string _prefix;
@@ -48,13 +48,13 @@ namespace Microsoft.IdentityModel.Xml
             get; private set;
         }
 
-        public XmlTokenEntry(XmlNodeType nodeType, string value)
+        public XmlToken(XmlNodeType nodeType, string value)
         {
             NodeType = nodeType;
             Value = value;
         }
 
-        public XmlTokenEntry(XmlNodeType nodeType, string prefix, string localName, string @namespace, string value)
+        public XmlToken(XmlNodeType nodeType, string prefix, string localName, string @namespace, string value)
         {
             NodeType = nodeType;
             _prefix = prefix;
@@ -63,7 +63,7 @@ namespace Microsoft.IdentityModel.Xml
             Value = value;
         }
 
-        public XmlTokenEntry(XmlNodeType nodeType, string prefix, string localName, string @namespace, bool isEmptyElement)
+        public XmlToken(XmlNodeType nodeType, string prefix, string localName, string @namespace, bool isEmptyElement)
         {
             NodeType = nodeType;
             _prefix = prefix;

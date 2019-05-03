@@ -363,8 +363,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml
                 actualIssuer = ClaimsIdentity.DefaultIssuer;
             }
 
-            var subjects = ProcessStatements(samlToken, actualIssuer, validationParameters);
-            return subjects;
+            return ProcessStatements(samlToken, actualIssuer, validationParameters);
         }
 
         /// <summary>
@@ -759,6 +758,17 @@ namespace Microsoft.IdentityModel.Tokens.Saml
         /// <summary>
         /// Deserializes from XML a token of the type handled by this instance.
         /// </summary>
+        /// <param name="xmlReader">An XML reader positioned at the token's start
+        /// element.</param>
+        /// <returns>An instance of <see cref="SamlSecurityToken"/>.</returns>
+        public override SecurityToken ReadToken(XmlReader xmlReader)
+        {
+            return new SamlSecurityToken(Serializer.ReadAssertion(xmlReader));
+        }
+
+        /// <summary>
+        /// Deserializes from XML a token of the type handled by this instance.
+        /// </summary>
         /// <param name="reader">An XML reader positioned at the token's start 
         /// element.</param>
         /// <param name="validationParameters"> validation parameters for the <see cref="SamlSecurityToken"/>.</param>
@@ -893,7 +903,6 @@ namespace Microsoft.IdentityModel.Tokens.Saml
             Validators.ValidateAudience(audiences, securityToken, validationParameters);
         }
 
-
         /// <summary>
         /// Validates the Lifetime and Audience conditions.
         /// </summary>
@@ -996,20 +1005,23 @@ namespace Microsoft.IdentityModel.Tokens.Saml
             if (validationParameters == null)
                 throw LogArgumentNullException(nameof(validationParameters));
 
-            var samlToken = ReadSamlToken(token);
             if (validationParameters.SignatureValidator != null)
             {
                 var validatedSamlToken = validationParameters.SignatureValidator(token, validationParameters);
                 if (validatedSamlToken == null)
                     throw LogExceptionMessage(new SecurityTokenValidationException(FormatInvariant(TokenLogMessages.IDX10505, token)));
 
-                var validatedSaml = validatedSamlToken as SamlSecurityToken;
-                if (validatedSaml == null)
+                if (!(validatedSamlToken is SamlSecurityToken validatedSaml))
                     throw LogExceptionMessage(new SecurityTokenValidationException(FormatInvariant(TokenLogMessages.IDX10506, typeof(SamlSecurityToken), validatedSamlToken.GetType(), token)));
 
                 return validatedSaml;
             }
 
+            return ValidateSignature(ReadSamlToken(token), token, validationParameters);
+        }
+
+        private SamlSecurityToken ValidateSignature(SamlSecurityToken samlToken, string token, TokenValidationParameters validationParameters)
+        {
             if (samlToken.Assertion.Signature == null)
             {
                 if (validationParameters.RequireSignedTokens)
@@ -1106,6 +1118,24 @@ namespace Microsoft.IdentityModel.Tokens.Saml
         /// <summary>
         /// Reads and validates a well formed <see cref="SamlSecurityToken"/>.
         /// </summary>
+        /// <param name="xmlReader">A string containing a well formed securityToken.</param>
+        /// <param name="validationParameters">Contains data and information needed for validation.</param>
+        /// <param name="validatedToken">The <see cref="SecurityToken"/> that was validated.</param>
+        /// <returns>A <see cref="ClaimsPrincipal"/> generated from the claims in the Saml securityToken.</returns>
+        /// <exception cref="ArgumentNullException">if <paramref name="xmlReader"/> is null or whitespace.</exception>
+        /// <exception cref="ArgumentNullException">if <paramref name="validationParameters"/> is null.</exception>
+        /// <exception cref="ArgumentException">if 'securityToken.Length' $gt; <see cref="TokenHandler.MaximumTokenSizeInBytes"/>.</exception>
+        public ClaimsPrincipal ValidateToken(XmlReader xmlReader, TokenValidationParameters validationParameters, out SecurityToken validatedToken)
+        {
+            var samlToken = ReadToken(xmlReader) as SamlSecurityToken;
+            ValidateSignature(samlToken, samlToken.Assertion.CanonicalString, validationParameters);
+
+            return ValidateToken(samlToken, samlToken.Assertion.CanonicalString, validationParameters, out validatedToken);
+        }
+
+        /// <summary>
+        /// Reads and validates a well formed <see cref="SamlSecurityToken"/>.
+        /// </summary>
         /// <param name="token">A string containing a well formed securityToken.</param>
         /// <param name="validationParameters">Contains data and information needed for validation.</param>
         /// <param name="validatedToken">The <see cref="SecurityToken"/> that was validated.</param>
@@ -1125,6 +1155,12 @@ namespace Microsoft.IdentityModel.Tokens.Saml
                 throw LogExceptionMessage(new ArgumentException(FormatInvariant(TokenLogMessages.IDX10209, token.Length, MaximumTokenSizeInBytes)));
 
             var samlToken = ValidateSignature(token, validationParameters);
+
+            return ValidateToken(samlToken, token, validationParameters, out validatedToken);
+        }
+
+        private ClaimsPrincipal ValidateToken(SamlSecurityToken samlToken, string token, TokenValidationParameters validationParameters, out SecurityToken validatedToken)
+        {
             ValidateConditions(samlToken, validationParameters);
             var issuer = ValidateIssuer(samlToken.Issuer, samlToken, validationParameters);
             ValidateTokenReplay(samlToken.Assertion.Conditions.NotOnOrAfter, token, validationParameters);
@@ -1133,7 +1169,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml
             var identities = CreateClaimsIdentities(samlToken, issuer, validationParameters);
             if (validationParameters.SaveSigninToken)
             {
-                identities.ElementAt(0).BootstrapContext = token;
+                identities.ElementAt(0).BootstrapContext = samlToken.Assertion.CanonicalString ?? token;
             }
 
             LogHelper.LogInformation(TokenLogMessages.IDX10241, token);

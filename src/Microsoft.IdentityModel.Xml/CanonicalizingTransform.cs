@@ -25,7 +25,10 @@
 //
 //------------------------------------------------------------------------------
 
+using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
+using System.Xml;
 
 namespace Microsoft.IdentityModel.Xml
 {
@@ -64,5 +67,29 @@ namespace Microsoft.IdentityModel.Xml
         /// <param name="hashAlg">the <see cref="HashAlgorithm"/>to use</param>
         /// <returns>the hash of the processed XML nodes.</returns>
         public abstract byte[] ProcessAndDigest(XmlTokenStream tokenStream, HashAlgorithm hashAlg);
+
+        /// <summary>
+        /// Applies a canonicalization transform over a set of XML nodes.
+        /// </summary>
+        /// <param name="tokens">the set of XML nodes to transform.</param>
+        /// <param name="includeComments">include comments in canonical bytes.</param>
+        /// <param name="inclusiveNamespacesPrefixList">list of namespace prefixes to include</param>
+        /// <returns>the bytes of the transformed octets.</returns>
+        internal static byte[] Process(IList<XmlToken> tokens, bool includeComments, string[] inclusiveNamespacesPrefixList)
+        {
+            var streamWriter = new XmlTokenStreamWriter(tokens);
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = XmlDictionaryWriter.CreateTextWriter(Stream.Null))
+                {
+                    writer.StartCanonicalization(stream, includeComments, inclusiveNamespacesPrefixList);
+                    streamWriter.WriteTo(writer);
+                    writer.EndCanonicalization();
+                    writer.Flush();
+                }
+                stream.Flush();
+                return stream.ToArray();
+            }
+        }
     }
 }

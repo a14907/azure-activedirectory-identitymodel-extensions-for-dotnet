@@ -27,6 +27,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
+using System.Xml;
 using Microsoft.IdentityModel.Xml;
 using static Microsoft.IdentityModel.Logging.LogHelper;
 
@@ -38,6 +42,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml
     public class SamlAssertion
     {
         private string _assertionId;
+        private string _canonicalString;
         private string _issuer;
         private DateTime _issueInstant;
 
@@ -153,6 +158,22 @@ namespace Microsoft.IdentityModel.Tokens.Saml
         public Signature Signature { get; set; }
 
         /// <summary>
+        /// c bytes
+        /// </summary>
+        public string CanonicalString
+        {
+            get
+            {
+                if (_canonicalString == null && XmlTokens != null)
+                {
+                    _canonicalString = Encoding.UTF8.GetString(CanonicalizingTransfrom.Process(XmlTokens, false, null));
+                }
+
+                return _canonicalString;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the <see cref="SigningCredentials"/> used by the issuer to protect the integrity of the assertion.
         /// </summary>
         public SigningCredentials SigningCredentials { get; set; }
@@ -161,5 +182,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml
         /// Gets the <see cref="IList{SamlStatement}"/>(s) regarding the subject.
         /// </summary>
         public IList<SamlStatement> Statements { get; }
+
+        internal ReadOnlyCollection<XmlToken> XmlTokens { get; set; }
     }
 }

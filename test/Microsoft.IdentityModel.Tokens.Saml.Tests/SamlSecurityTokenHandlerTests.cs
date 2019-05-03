@@ -196,10 +196,14 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
         public void ReadToken(SamlTheoryData theoryData)
         {
             var context = TestUtilities.WriteHeader($"{this}.ReadToken", theoryData);
+            SecurityToken samlTokenFromString = null;
+            SecurityToken samlTokenFromXmlReader = null;
             try
             {
-                theoryData.Handler.ReadToken(theoryData.Token);
+                samlTokenFromString = theoryData.Handler.ReadToken(theoryData.Token);
+                samlTokenFromXmlReader = theoryData.Handler.ReadToken(theoryData.XmlReader);
                 theoryData.ExpectedException.ProcessNoException(context);
+                IdentityComparer.AreEqual(samlTokenFromString, samlTokenFromXmlReader, context);
             }
             catch (Exception ex)
             {
@@ -221,7 +225,8 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
                         First = true,
                         Handler = new SamlSecurityTokenHandler(),
                         TestId = nameof(ReferenceTokens.SamlToken_Valid),
-                        Token = ReferenceTokens.SamlToken_Valid
+                        Token = ReferenceTokens.SamlToken_Valid,
+                        XmlReader = new XmlTextReader(new StringReader(ReferenceTokens.SamlToken_Valid))
                     }
                 };
             }
@@ -235,7 +240,10 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
             {
                 var samlToken = theoryData.Handler.CreateToken(theoryData.TokenDescriptor);
                 var token = theoryData.Handler.WriteToken(samlToken);
+                var tokenString = token;
                 var principal = theoryData.Handler.ValidateToken(token, theoryData.ValidationParameters, out SecurityToken validatedToken);
+                var principal2 = theoryData.Handler.ValidateToken(new XmlTextReader(new StringReader(tokenString)), theoryData.ValidationParameters, out SecurityToken validatedToken2);
+                IdentityComparer.AreEqual(principal, principal2, context);
                 theoryData.ExpectedException.ProcessNoException(context);
             }
             catch (Exception ex)
@@ -265,6 +273,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
                     ValidationParameters = new TokenValidationParameters
                     {
                         IssuerSigningKey = Default.AsymmetricSigningKey,
+                        SaveSigninToken = true,
                         ValidAudience = Default.Audience,
                         ValidIssuer = Default.Issuer,
                     }
@@ -283,6 +292,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
                     ValidationParameters = new TokenValidationParameters
                     {
                         IssuerSigningKey = KeyingMaterial.RsaSigningCreds_2048_Public.Key,
+                        SaveSigninToken = true,
                         ValidAudience = Default.Audience,
                         ValidIssuer = Default.Issuer,
                     },
@@ -301,6 +311,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
                     ValidationParameters = new TokenValidationParameters
                     {
                         IssuerSigningKey = KeyingMaterial.RsaSigningCreds_2048_FromRsa_Public.Key,
+                        SaveSigninToken = true,
                         ValidAudience = Default.Audience,
                         ValidIssuer = Default.Issuer,
                     },
@@ -319,6 +330,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
                     ValidationParameters = new TokenValidationParameters
                     {
                         IssuerSigningKey = KeyingMaterial.JsonWebKeyRsa256PublicSigningCredentials.Key,
+                        SaveSigninToken = true,
                         ValidAudience = Default.Audience,
                         ValidIssuer = Default.Issuer,
                     }
@@ -709,7 +721,7 @@ namespace Microsoft.IdentityModel.Tokens.Saml.Tests
             var context = TestUtilities.WriteHeader($"{this}.WriteToken", theoryData);
             context.PropertiesToIgnoreWhenComparing = new Dictionary<Type, List<string>>
             {
-                { typeof(SamlAssertion), new List<string> { "IssueInstant", "InclusiveNamespacesPrefixList", "Signature", "SigningCredentials" } },
+                { typeof(SamlAssertion), new List<string> { "IssueInstant", "InclusiveNamespacesPrefixList", "Signature", "SigningCredentials", "CanonicalString" } },
                 { typeof(SamlSecurityToken), new List<string> { "SigningKey" } },
             };
 

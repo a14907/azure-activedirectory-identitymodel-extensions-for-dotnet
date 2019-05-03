@@ -119,5 +119,10 @@ namespace Microsoft.IdentityModel.Xml
             get;
             protected set;
         }
+
+        /// <summary>
+        /// Gets the <see cref="XmlTokenStream"/> that was use
+        /// </summary>
+        public XmlTokenStream XmlTokenStream { get => _tokenStreamReader.TokenStream; }
     }
 }

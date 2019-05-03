@@ -304,7 +304,8 @@ namespace Microsoft.IdentityModel.Tokens.Saml
                 return new SamlAssertion(assertionId, issuer, issueInstant, conditions, advice, statements)
                 {
                     // attach signedXml for validation of signature
-                    Signature = envelopeReader.Signature
+                    Signature = envelopeReader.Signature,
+                    XmlTokens = envelopeReader.XmlTokenStream.TokenEntries
                 };
             }
             catch (Exception ex)

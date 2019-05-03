@@ -34,15 +34,13 @@ namespace Microsoft.IdentityModel.Xml
 {
     internal class XmlTokenStreamWriter
     {
-        IList<XmlTokenEntry> _entries;
+        IList<XmlToken> _entries;
         int _position;
 
-        public XmlTokenStreamWriter(IList<XmlTokenEntry> entries, string excludedElement, string excludedNamespace)
+        public XmlTokenStreamWriter(IList<XmlToken> entries)
         {
             _entries = entries ?? throw LogArgumentNullException(nameof(entries));
             Count = entries.Count;
-            ExcludedElement = excludedElement;
-            ExcludedNamespace = excludedNamespace;
         }
 
         public int Count
@@ -83,16 +81,6 @@ namespace Microsoft.IdentityModel.Xml
         public string Value
         {
             get { return _entries[_position].Value; }
-        }
-
-        public string ExcludedElement
-        {
-            get;
-        }
-
-        public string ExcludedNamespace
-        {
-            get;
         }
 
         public bool MoveToFirst()
@@ -139,6 +127,11 @@ namespace Microsoft.IdentityModel.Xml
 
         public void WriteTo(XmlWriter writer)
         {
+            WriteTo(writer, null, null);
+        }
+
+        public void WriteTo(XmlWriter writer, string excludedElement, string excludedNamespace)
+        {
             if (writer == null)
                 throw LogExceptionMessage(new ArgumentNullException(nameof(writer)));
 
@@ -156,8 +149,8 @@ namespace Microsoft.IdentityModel.Xml
                         bool isEmpty = IsEmptyElement;
                         depth++;
                         if (include
-                            && LocalName == ExcludedElement
-                            && Namespace == ExcludedNamespace)
+                            && LocalName == excludedElement
+                            && Namespace == excludedNamespace)
                         {
                             include = false;
                             recordedDepth = depth;
