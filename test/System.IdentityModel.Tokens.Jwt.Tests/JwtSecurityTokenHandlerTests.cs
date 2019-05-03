@@ -765,7 +765,7 @@ namespace System.IdentityModel.Tokens.Jwt.Tests
                     JWECompressionString = ReferenceTokens.JWECompressionTokenWithDEF,
                     CompressionProviderFactory = compressionProviderFactoryForCustom2,
                     TestId = "CustomCompressionProviderFails",
-                    ExpectedException = new ExpectedException(typeof(SecurityTokenDecompressionFailedException), "IDX10679:", typeof(InvalidOperationException))
+                    ExpectedException = new ExpectedException(typeof(SecurityTokenDecompressionFailedException), "IDX10679:", typeof(SecurityTokenDecompressionFailedException))
                 }
             };
         }

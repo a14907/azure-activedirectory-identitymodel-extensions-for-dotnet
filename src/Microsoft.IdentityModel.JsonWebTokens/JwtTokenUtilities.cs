@@ -90,11 +90,12 @@ namespace Microsoft.IdentityModel.JsonWebTokens
         /// </summary>
         /// <param name="tokenBytes"></param>
         /// <param name="algorithm"></param>
-        /// <exception cref="ArgumentNullException">if 'tokenBytes' is null.</exception>
-        /// <exception cref="ArgumentNullException">if 'algorithm' is null.</exception>
-        /// <exception cref="NotSupportedException">if the decompression algorithm is not supported.</exception>
+        /// <exception cref="ArgumentNullException">if <paramref name="tokenBytes"/> is null.</exception>
+        /// <exception cref="ArgumentNullException">if <paramref name="algorithm"/> is null.</exception>
+        /// <exception cref="NotSupportedException">if the decompression <paramref name="algorithm"/> is not supported.</exception>
+        /// <exception cref="SecurityTokenDecompressionFailedException">if decompression using <paramref name="algorithm"/> fails.</exception>
         /// <returns>Decompressed JWT token</returns>
-        public static string DecompressToken(byte[] tokenBytes, string algorithm)
+        internal static string DecompressToken(byte[] tokenBytes, string algorithm)
         {
             if (tokenBytes == null)
                 throw LogHelper.LogArgumentNullException(nameof(tokenBytes));
@@ -109,7 +110,7 @@ namespace Microsoft.IdentityModel.JsonWebTokens
 
             var decompressedBytes = compressionProvider.Decompress(tokenBytes);
 
-            return decompressedBytes != null ? Encoding.UTF8.GetString(decompressedBytes) : throw LogHelper.LogExceptionMessage(new InvalidOperationException(LogHelper.FormatInvariant(TokenLogMessages.IDX10679, algorithm)));
+            return decompressedBytes != null ? Encoding.UTF8.GetString(decompressedBytes) : throw LogHelper.LogExceptionMessage(new SecurityTokenDecompressionFailedException(LogHelper.FormatInvariant(TokenLogMessages.IDX10679, algorithm)));
         }
 
         /// <summary>
